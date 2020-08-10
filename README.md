@@ -1,0 +1,2 @@
+# topg2
+Adds topg2 method to DataFrame to store a dataframe in postgress using copy_from. See [Naysan Saran](https://naysan.ca/2020/06/21/pandas-to-postgresql-using-psycopg2-copy_from/) for explanation of why this is best.
