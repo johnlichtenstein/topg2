@@ -146,7 +146,7 @@ def createTable(self, conn, tableName, schema="public"):
         return None
     except (Exception, pg2.DatabaseError) as error:
         cur.close()
-        print (error)
+        # print (error)
         return error
     else:
         conn.commit()
@@ -191,8 +191,8 @@ def pg2Append(self, tableName, conn, schema="public", sep="|"):
         cur.copy_from(tempF, tableName, sep=sep)
         conn.commit()
     except (Exception, pg2.DatabaseError) as error:
-        print("Error: %s" %(error))
-        print("in topg2 with %s" %(tempName))
+        # print("Error: %s" %(error))
+        # print("in topg2 with %s" %(tempName))
         conn.rollback()
         cur.close()
         tempF.close()
