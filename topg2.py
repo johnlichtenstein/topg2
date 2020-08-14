@@ -86,15 +86,6 @@ def createTableS(self, tableName, schema="public"):
     fmtR = self.rdbType() 
        
     headS = "CREATE TABLE {schemaN}.{tabN} ("
-    tailS = """)
-
-WITH (
-  OIDS=FALSE
-);
-
-ALTER TABLE {schemaN}.{tabN}
-  OWNER TO %s;
-  """
 
     othR = fmtR.query("cName != 'id'")
     bodyL = ['"id" SERIAL PRIMARY KEY']
@@ -103,7 +94,7 @@ ALTER TABLE {schemaN}.{tabN}
 
     bodyS = "\n\t, ".join(bodyL)
     
-    ctS = "".join((headS, bodyS, tailS))
+    ctS = "".join((headS, bodyS, ");"))
         
     return ctS.format(schemaN=schema, tabN=tableName)
 
@@ -127,19 +118,13 @@ def createTable(self, conn, tableName, schema="public"):
     -------
     None.
     """
-    
-    try:
-        user = conn.info.user
-    except:
-        # if we have an open connection, there should be info.user
-        raise pg2.errors.ConnectionException
-      
+       
     sqlS = self.createTableS(tableName, schema=schema)
         
     cur = conn.cursor()
     # print ("opened cursor")
     try:
-        cur.execute(sqlS %(user))
+        cur.execute(sqlS)
     except pg2.errors.DuplicateTable:
         # this is fine
         cur.close()
@@ -255,10 +240,10 @@ DataFrame.topg2 = topg2
 
 if __name__ == "__main__":
     import json
-    TABNAME = "table2" 
+    TABNAME = "table0" 
 
     SECRET = os.path.join(os.path.join(os.path.expanduser("~") \
-                                       , "secret"), "db.json")
+                                        , "secret"), "db.json")
     tD = json.load(open(SECRET))
     # print (tD)
     
