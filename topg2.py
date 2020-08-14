@@ -226,12 +226,19 @@ def topg2(self, tableName, conn, schema="public", sep="|"):
     None : success
     str: Name of tempfile serialization of self
     """
+       
+    # check for existing
+    Q = """select count(*) as n
+    from information_schema.tables
+    where table_schema = '{sn}' 
+        and table_name = '{tn}'
+    """.format(sn=schema, tn=tableName)
     
-    try:
-        nR = pd.read_sql("select count(*) from {sN}.{tN}" \
-                         .format(sN=schema, tN=tableName), conn)
-    except:
-        # no such table. There could be another issue but 
+    N = pd.read_sql(Q, conn).iloc[0].n
+    if N:
+        # table exists, we can just append
+        pass
+    else:
         self.createTable(conn, tableName, schema=schema)
         
     self.pg2Append(tableName, conn, schema="public", sep="|")
