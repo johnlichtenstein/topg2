@@ -28,7 +28,9 @@ import tempfile
 import os
 
 FMTD = {"int64": "bigint", "object": "text", "float64": "double precision" \
-        , "bool": "boolean", "datetime64[ns]": "date"}
+        , "bool": "boolean", "datetime64[ns]": "date" \
+        , "float32": "double precision"}
+NULLS = "~"
 
 def rdbType(self):
     """
@@ -58,7 +60,7 @@ def rdbType(self):
         try:
             fmt = FMTD[obs.sType]
         except KeyError:
-            fmt = "txt"
+            fmt = "text"
                 
         tempL.append(fmt)
     
@@ -138,7 +140,7 @@ def createTable(self, conn, tableName, schema="public"):
         cur.close()
         return None
 
-def pg2Append(self, tableName, conn, schema="public", sep="|"):
+def pg2Append(self, tableName, conn, schema="public", sep="|", null=NULLS):
     """
     Save self in pg2 table, creating table if needed. Creates a tempfile and 
     uses cursor copy. Tempfile is not deleted on failure in case user needs 
@@ -173,7 +175,7 @@ def pg2Append(self, tableName, conn, schema="public", sep="|"):
     
     cur = conn.cursor()
     try:
-        cur.copy_from(tempF, tableName, sep=sep)
+        cur.copy_from(tempF, tableName, sep=sep, null=null)
         conn.commit()
     except (Exception, pg2.DatabaseError) as error:
         print("Error: %s" %(error))
@@ -189,7 +191,7 @@ def pg2Append(self, tableName, conn, schema="public", sep="|"):
 
     return None     
 
-def topg2(self, tableName, conn, schema="public", sep="|"):   
+def topg2(self, tableName, conn, schema="public", sep="|", null=NULLS):   
     """
     Save self in pg2 table, creating table if needed. Creates a tempfile and 
     uses cursor copy. Tempfile is not deleted on failure in case user needs 
@@ -205,6 +207,8 @@ def topg2(self, tableName, conn, schema="public", sep="|"):
         Name of schema to place table in. The default is "public".
     sep : str, optional
         delimiter for temp file. The default is "|".
+    null : str, optional
+        string to use for null values. defaults to "~"
 
     Returns
     -------
@@ -226,7 +230,8 @@ def topg2(self, tableName, conn, schema="public", sep="|"):
     else:
         self.createTable(conn, tableName, schema=schema)
         
-    self.pg2Append(tableName, conn, schema="public", sep="|")
+    self.fillna(value=null) \
+        .pg2Append(tableName, conn, schema=schema, sep=sep, null=null)
     
     return None
         
@@ -251,12 +256,13 @@ if __name__ == "__main__":
     
     # create dataframes to store
     exampleD = {"sv": "a a a a a b b b b b".split() \
-                , "x": [1, 2, 3, 2, 3, 4, 4, 5, 6, 1]}
+                , "x": [1, "two", 3, 2, 3, 4, 4, 5, 6, 1]}
     extraD = {"sv": "c c c c c d d d d d".split() \
                 , "x": [1, 2, 3, 2, 3, 4, 4, 5, 6, 1]}
 
     exampleR = pd.DataFrame(exampleD).reset_index() \
         .rename(columns={"index": "id"}) 
+    exampleR.x = pd.to_numeric(exampleR.x, errors='coerce', downcast="float")
     extraR = pd.DataFrame(extraD).reset_index().rename(columns={"index": "id"})
     extraR.id = extraR.id + [len(exampleR)] * len(extraR)
     
