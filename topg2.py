@@ -166,9 +166,22 @@ def pg2Append(self, tableName, conn, schema="public", sep="|", null=NULLS):
     str: Name of tempfile serialization of self
     """
     
+    # first check for mad id
+    try:
+        maxId = pd.read_sql("select max(id) as mid from %s" %(tableName) \
+                            , conn).iloc[0].mid + 1
+    except:
+        maxId = 0
+
+    if maxId == None:
+        maxId = 0
+
+    tempR = self.copy()
+    tempR.id = tempR.id + [maxId] * len(tempR)
+        
     tempF = tempfile.NamedTemporaryFile(mode="w", delete=False)
     tempName = tempF.name
-    self.to_csv(tempName, sep=sep, index=False, header=False)
+    tempR.to_csv(tempName, sep=sep, index=False, header=False)
     tempF.close()
     
     tempF = open(tempName)
@@ -190,6 +203,7 @@ def pg2Append(self, tableName, conn, schema="public", sep="|", null=NULLS):
         return None
 
     return None     
+
 
 def topg2(self, tableName, conn, schema="public", sep="|", null=NULLS):   
     """
@@ -234,9 +248,7 @@ def topg2(self, tableName, conn, schema="public", sep="|", null=NULLS):
         .pg2Append(tableName, conn, schema=schema, sep=sep, null=null)
     
     return None
-        
-    
-       
+
 DataFrame.rdbType = rdbType
 DataFrame.createTableS = createTableS
 DataFrame.createTable = createTable
@@ -264,7 +276,7 @@ if __name__ == "__main__":
         .rename(columns={"index": "id"}) 
     exampleR.x = pd.to_numeric(exampleR.x, errors='coerce', downcast="float")
     extraR = pd.DataFrame(extraD).reset_index().rename(columns={"index": "id"})
-    extraR.id = extraR.id + [len(exampleR)] * len(extraR)
+    # extraR.id = extraR.id + [len(exampleR)] * len(extraR) # now internal
     
 
     test = exampleR.topg2(TABNAME, conn)   
